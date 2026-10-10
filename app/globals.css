@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'DM Sans', sans-serif;
+  --font-display: 'Archivo Black', sans-serif;
+  --color-border: oklch(1 0 0 / 12%);
+  --color-ring: oklch(0.85 0.16 90);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: #000000; color: #E7DFD4; font-family: 'DM Sans', sans-serif; }
+.font-display { font-family: 'Archivo Black', Impact, sans-serif; }
+.brand-mark { font-family: 'Archivo Black', Impact, sans-serif; letter-spacing: -0.08em; text-shadow: 3px 3px 0 #F54E95; transform: skewX(-4deg); }
+::selection { background: #C4E76B; color: #000000; }
+button, a { -webkit-tap-highlight-color: transparent; }

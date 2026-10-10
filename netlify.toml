@@ -1,0 +1,6 @@
+[build.environment]
+  NODE_VERSION = "22"
+
+# Los datos (productos e imágenes) se guardan en Netlify Blobs, sin servicios extra.
+# Define en Netlify (Site configuration → Environment variables):
+#   ADMIN_USERNAME, ADMIN_PASSWORD_HASH, SESSION_SECRET, NEXT_PUBLIC_WHATSAPP_NUMBER
