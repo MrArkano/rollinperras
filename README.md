@@ -21,22 +21,12 @@ Permite **editar nombre, descripción, categoría, etiqueta, precio/tamaños e i
 **agregar productos nuevos**, **ocultarlos** (sin borrarlos) y **eliminarlos**. Las imágenes se pueden
 subir (se comprimen en el navegador) o enlazar por URL `https`.
 
-### Credenciales
-
-```bash
-npm run admin:hash -- "una-contraseña-larga"
-```
-
-Imprime `ADMIN_PASSWORD_HASH` y `SESSION_SECRET`. Colócalos junto a `ADMIN_USERNAME` en `.env.local`
-(local) o en las variables de entorno de Netlify (producción).
-
-> El `.env.local` incluido usa la contraseña de desarrollo `RollinAdmin#2026!`. Cámbiala antes de publicar.
 
 ## Despliegue en Netlify
 
 1. Conecta el repositorio. Netlify detecta Next.js automáticamente.
 2. En *Site configuration → Environment variables* define:
-   `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `SESSION_SECRET`, `NEXT_PUBLIC_WHATSAPP_NUMBER`.
+  
 3. Productos e imágenes se guardan en **Netlify Blobs** (activado solo; no requiere base de datos).
    Opcional: fija `STORAGE_DRIVER=netlify-blobs` para hacerlo explícito.
 
