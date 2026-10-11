@@ -5,12 +5,16 @@ import { VersionConflictError } from '@/shared/domain/errors'
 export const NETLIFY_STORE_NAME = 'rollin-perras'
 
 export function openNetlifyStore(): Store {
-  return getStore({ name: NETLIFY_STORE_NAME, consistency: 'strong' })
+  // En funciones serverless de Netlify no se debe forzar 'strong', ya que causa
+  // BlobsConsistencyError al no disponer de uncachedEdgeURL. Se usa la configuración estándar.
+  return getStore({ name: NETLIFY_STORE_NAME })
 }
 
 /** Adaptador para Netlify Blobs; usa ETags y escrituras condicionales para la concurrencia. */
 export class NetlifyBlobsDocumentStore implements DocumentStore {
-  constructor(private readonly store: Store = openNetlifyStore()) {}
+  private get store(): Store {
+    return openNetlifyStore()
+  }
 
   async read(key: string): Promise<VersionedDocument | null> {
     const entry = await this.store.getWithMetadata(`documents/${key}`, { type: 'text' })
@@ -24,3 +28,4 @@ export class NetlifyBlobsDocumentStore implements DocumentStore {
     if (!result.modified) throw new VersionConflictError(`El documento "${key}" cambió durante la escritura`)
   }
 }
+

@@ -7,7 +7,9 @@ const CONTENT_TYPES: ReadonlySet<string> = new Set<ImageContentType>(['image/jpe
 const isImageContentType = (value: unknown): value is ImageContentType => typeof value === 'string' && CONTENT_TYPES.has(value)
 
 export class NetlifyBlobsImageStorage implements ImageStorage {
-  constructor(private readonly store: Store = openNetlifyStore()) {}
+  private get store(): Store {
+    return openNetlifyStore()
+  }
 
   async save(fileName: string, image: StoredImage): Promise<void> {
     const buffer = image.bytes.buffer.slice(image.bytes.byteOffset, image.bytes.byteOffset + image.bytes.byteLength) as ArrayBuffer

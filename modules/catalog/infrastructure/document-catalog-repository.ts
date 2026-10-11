@@ -34,19 +34,42 @@ function parseCatalog(content: string): Catalog {
 
 const serializeCatalog = (catalog: Catalog): string => JSON.stringify(catalog, null, 2)
 
+const READ_TIMEOUT_MS = 2500
+
+async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)),
+  ])
+}
+
 /** Repositorio del catálogo sobre cualquier `DocumentStore` (archivo, Netlify Blobs, ...). */
 export class DocumentCatalogRepository implements CatalogRepository {
   constructor(private readonly store: DocumentStore) {}
 
   async load(): Promise<Catalog> {
-    const document = await this.store.read(CATALOG_KEY)
-    if (document) return parseCatalog(document.content)
-    return this.seed()
+    try {
+      const document = await withTimeout(this.store.read(CATALOG_KEY), READ_TIMEOUT_MS)
+      if (document) return parseCatalog(document.content)
+      return await this.seed()
+    } catch (error) {
+      logger.error('catalog.load_failed_falling_back_to_seed', {
+        error: error instanceof Error ? error.message : String(error),
+      })
+      return SEED_CATALOG
+    }
   }
 
   async update(transform: (current: Catalog) => Catalog): Promise<Catalog> {
     for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt += 1) {
-      const document = await this.store.read(CATALOG_KEY)
+      let document: { content: string; version: string } | null = null
+      try {
+        document = await withTimeout(this.store.read(CATALOG_KEY), READ_TIMEOUT_MS)
+      } catch (readError) {
+        logger.warn('catalog.read_before_update_failed', {
+          error: readError instanceof Error ? readError.message : String(readError),
+        })
+      }
       const current = document ? parseCatalog(document.content) : SEED_CATALOG
       const next = transform(current)
       try {
@@ -62,14 +85,21 @@ export class DocumentCatalogRepository implements CatalogRepository {
 
   private async seed(): Promise<Catalog> {
     try {
-      await this.store.write(CATALOG_KEY, serializeCatalog(SEED_CATALOG), null)
+      await withTimeout(this.store.write(CATALOG_KEY, serializeCatalog(SEED_CATALOG), null), READ_TIMEOUT_MS)
       logger.info('catalog.seeded', { products: SEED_CATALOG.products.length })
       return SEED_CATALOG
     } catch (error) {
-      if (!(error instanceof VersionConflictError)) throw error
+      if (!(error instanceof VersionConflictError)) {
+        logger.warn('catalog.seed_failed_using_seed', { error: error instanceof Error ? error.message : String(error) })
+        return SEED_CATALOG
+      }
       // Otra petición sembró el catálogo primero: leemos su versión.
-      const document = await this.store.read(CATALOG_KEY)
-      return document ? parseCatalog(document.content) : SEED_CATALOG
+      try {
+        const document = await withTimeout(this.store.read(CATALOG_KEY), READ_TIMEOUT_MS)
+        return document ? parseCatalog(document.content) : SEED_CATALOG
+      } catch {
+        return SEED_CATALOG
+      }
     }
   }
 }
